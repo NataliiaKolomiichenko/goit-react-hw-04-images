@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useState, useEffect } from "react";
 import Searchbar from "./Searchbar"
 import ImageGallery from "./ImageGallery";
 import Button from "./Button"
@@ -6,81 +6,68 @@ import { fetchImages } from "../services/fetchApi"
 import Modal from "components/Modal";
 import Loader from "./Loader";
 
+export const App = () => {
+  const [page, setPage] = useState(1);
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [bigImageUrl, setBigImageUrl] = useState(null);
+  const [loading, setLoading] = useState('');
 
-export class App extends Component {
-  state = {
-    page: 1,
-    query: "",
-    images: [],
-    showModal: false,
-    bigImageUrl: null,
-    loading: "",
-  }
-
-  async componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-    if (prevState.page !== page || prevState.query !== query) {
+  useEffect( () => {
+    if (query === '') {
+      return;
+    }
+    async function fetchData() {
       try {
-        this.loadingChange()
-      const data = await fetchImages(query, page)
-      const imagesData = await data.hits;
-        this.setState(state => ({
-          images: [...state.images, ...imagesData]
-        }))
-        this.loadingChange()
-        
+        loadingChange();
+        const data = await fetchImages(query, page);
+        const imagesData = await data.hits;
+        setImages(prevState => [...prevState, ...imagesData]);
+        loadingChange();
       } catch(error) {
-        console.log(error)
+          console.log(error)
       }
     }
+    fetchData()
+  },[query, page])
+
+  const loadingChange = () => {
+    setLoading(prevState => !prevState)
   }
 
-  loadingChange = () => {
-    this.setState(state => ({loading: !state.loading}))
-  }
-
-  handleSubmit = (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
-    if (this.state.query === event.target.elements.query.value) {
-      return
+    if (query === event.target.elements.query.value) {
+      return;
     }
 
-    this.setState({
-      page: 1,
-      query: event.target.elements.query.value,
-      images: [],
-    })
+    setPage(1);
+    setQuery(event.target.elements.query.value);
+    setImages([]);
   }
 
-  loadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1
-    }))
+  const loadMore = () => {
+    setPage(prevState => prevState + 1);
   }
 
-  toggleModal = () => {
-    this.setState(state => ({
-      showModal: !state.showModal,
-      bigImageUrl: null,
-    }))
+  const toggleModal = () => {
+    setShowModal(prevState => !prevState);
+    setBigImageUrl(null);
   }
 
-  LargeImages = imageUrl => {
-    this.toggleModal();
-    this.setState({ bigImageUrl: imageUrl });
+  const largeImages = imageUrl => {
+    toggleModal();
+    setBigImageUrl(imageUrl);
   };
 
-  render() {
-    const { query, images, bigImageUrl, loading, showModal } = this.state;
-    return (
+  return (
     <div>
-        <Searchbar onSubmit={this.handleSubmit} />
-        {query && <ImageGallery items={images} onImageClick={this.LargeImages} />}
+        <Searchbar onSubmit={handleSubmit} />
+        {query && <ImageGallery items={images} onImageClick={largeImages} />}
         {loading && <Loader />}
-        {images.length !== 0 && <Button loadMore={this.loadMore} />}
-        {showModal && <Modal onToggle={this.toggleModal} largeImage={bigImageUrl} />}
-        
+        {images.length !== 0 && <Button loadMore={loadMore} />}
+        {showModal && <Modal onToggle={toggleModal} largeImage={bigImageUrl} />}
     </div>
   );
-  }
 }
