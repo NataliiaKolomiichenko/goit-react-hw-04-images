@@ -6,16 +6,17 @@ import PropTypes from "prop-types"
 const modalRoot = document.querySelector('#modal-root');
 
 const Modal = ({ onToggle, largeImage }) => {
-  const handleKeyDown = event => {
-    if (event.code === 'Escape') {
-      onToggle();
-    }
-  };
 
   useEffect(() => {
+    const handleKeyDown = event => {
+      if (event.code === 'Escape') {
+        onToggle();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => { window.removeEventListener('keydown', handleKeyDown) };
-  })
+  }, [onToggle])
 
   const handleBackdrop = (event) => {
     if (event.currentTarget === event.target) {
